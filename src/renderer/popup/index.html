@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Content Security Policy: Blocks inline scripts and remote execution for security -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';">
+  <title>ClipVault</title>
+  <link rel="stylesheet" href="../shared/theme.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="window-container">
+    <header class="window-header">
+      <div class="app-brand">
+        <span class="app-icon">📋</span>
+        <h1 class="app-title">ClipVault</h1>
+      </div>
+      <span class="milestone-badge">Milestone 1</span>
+    </header>
+
+    <main class="window-content">
+      <div class="card test-card">
+        <h2>IPC Scaffold Verification</h2>
+        <p class="description">
+          Click below to test inter-process communication between the sandboxed 
+          <strong>Renderer</strong> and the privileged <strong>Main</strong> process via <code>window.api.ping()</code>.
+        </p>
+
+        <button id="ping-btn" class="action-btn">
+          <span class="btn-text">Ping Main Process</span>
+        </button>
+
+        <div class="result-box">
+          <span class="result-label">Main Response:</span>
+          <code id="ping-result" class="result-value">Waiting for ping...</code>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <h3>Active Security Settings</h3>
+        <ul>
+          <li><code>contextIsolation: true</code></li>
+          <li><code>nodeIntegration: false</code></li>
+          <li><code>sandbox: true</code></li>
+          <li>Strict Content Security Policy (CSP)</li>
+        </ul>
+      </div>
+    </main>
+
+    <footer class="window-footer">
+      <span>ClipVault &bull; macOS Clipboard Manager</span>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

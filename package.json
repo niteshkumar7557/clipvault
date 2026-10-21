@@ -1,0 +1,21 @@
+{
+  "name": "clipvault",
+  "version": "1.0.0",
+  "description": "macOS menu bar clipboard manager and snippet tool built with Electron",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [
+    "electron",
+    "clipboard",
+    "macos",
+    "clipboard-manager"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "electron": "^45.0.0"
+  }
+}

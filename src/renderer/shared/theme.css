@@ -1,0 +1,44 @@
+:root {
+  --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --bg-color: rgba(255, 255, 255, 0.75);
+  --text-color: #1d1d1f;
+  --text-muted: #86868b;
+  --border-color: rgba(0, 0, 0, 0.1);
+  --accent-color: #0071e3;
+  --accent-text: #ffffff;
+  --card-bg: rgba(255, 255, 255, 0.6);
+  --card-border: rgba(0, 0, 0, 0.08);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: rgba(30, 30, 30, 0.75);
+    --text-color: #f5f5f7;
+    --text-muted: #a1a1a6;
+    --border-color: rgba(255, 255, 255, 0.12);
+    --accent-color: #2997ff;
+    --accent-text: #ffffff;
+    --card-bg: rgba(45, 45, 45, 0.6);
+    --card-border: rgba(255, 255, 255, 0.08);
+  }
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body {
+  font-family: var(--font-family);
+  color: var(--text-color);
+  font-size: 13px;
+  line-height: 1.4;
+  overflow: hidden;
+  background: transparent; /* Necessary for macOS vibrancy */
+}
