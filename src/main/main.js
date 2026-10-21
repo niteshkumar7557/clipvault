@@ -2,44 +2,65 @@
  * Main Process Entry Point
  * 
  * Electron APIs used:
- * - app: Manages the application lifecycle, system events, and application-level settings.
+ * - app: Manages application lifecycle and system events.
  * - BrowserWindow: (via windows.js) Manages application windows.
  * - ipcMain: (via ipc.js) Handles inter-process communication.
+ * - clipboard: (via clipboard-watcher.js) Monitors pasteboard changes.
  */
 
 const { app } = require('electron');
 const { createPopupWindow } = require('./windows');
-const { registerIpcHandlers } = require('./ipc');
+const { registerIpcHandlers, broadcastHistoryUpdated } = require('./ipc');
+const { ClipboardWatcher } = require('./clipboard-watcher');
+const { addHistoryItem } = require('./store');
 
-// app.requestSingleInstanceLock: Ensures only one instance of ClipVault runs at a time.
-// If a second instance is launched, this returns false and the new instance quits immediately.
+let clipboardWatcher = null;
+
+// Ensure single instance of the application
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
   app.quit();
 } else {
-  // app.whenReady: Returns a Promise that resolves when Electron has initialized and is ready to create browser windows.
   app.whenReady().then(() => {
-    // Register IPC channels before creating windows so handlers are guaranteed ready
+    // 1. Register IPC channels
     registerIpcHandlers();
 
-    // Section 10: Hide the macOS Dock icon so the utility app lives purely as a menu bar helper
+    // 2. Hide Dock icon on macOS (menu bar utility mode)
     if (app.dock) {
       app.dock.hide();
     }
 
-    // Create and display the popup window for Milestone 1
+    // 3. Create the popup window
     createPopupWindow();
 
-    // app.on('activate'): On macOS, applications are usually re-activated when clicked in the dock or triggered externally.
+    // 4. Initialize and start clipboard watcher
+    // Polls clipboard every 500ms, deduplicates, and emits 'change' on new copied text
+    clipboardWatcher = new ClipboardWatcher(500);
+    clipboardWatcher.on('change', (text) => {
+      console.log('[ClipVault] Captured clipboard copy:', text.length > 50 ? `${text.slice(0, 47)}...` : text);
+      const added = addHistoryItem(text);
+      if (added) {
+        // Push live update to the renderer
+        broadcastHistoryUpdated();
+      }
+    });
+    clipboardWatcher.start();
+
     app.on('activate', () => {
-      // Re-create window if necessary
+      // Re-focus or handle activate event
     });
   });
 
-  // app.on('window-all-closed'): Section 10: Do not quit when windows close on macOS.
-  // Menu bar and background clipboard manager tools should stay alive.
+  // Clean up timers on quit
+  app.on('will-quit', () => {
+    if (clipboardWatcher) {
+      clipboardWatcher.stop();
+    }
+  });
+
+  // Do not quit when windows close on macOS
   app.on('window-all-closed', () => {
-    // Keep app running on macOS
+    // Keep alive on macOS
   });
 }

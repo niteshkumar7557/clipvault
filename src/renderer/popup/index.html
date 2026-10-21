@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Content Security Policy: Blocks inline scripts and remote execution for security -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';">
   <title>ClipVault</title>
   <link rel="stylesheet" href="../shared/theme.css">
@@ -11,45 +10,44 @@
 </head>
 <body>
   <div class="window-container">
+    <!-- Header Area -->
     <header class="window-header">
       <div class="app-brand">
         <span class="app-icon">📋</span>
         <h1 class="app-title">ClipVault</h1>
+        <span id="item-count-badge" class="badge">0</span>
       </div>
-      <span class="milestone-badge">Milestone 1</span>
+      <div class="header-actions">
+        <!-- Allows toggling stay-on-top so user can test live updates while copying in other apps -->
+        <button id="pin-window-btn" class="icon-toggle-btn active" title="Toggle keep window open on blur">
+          <span class="pin-icon">📌</span>
+          <span id="pin-status-text" class="btn-label">Pinned</span>
+        </button>
+      </div>
     </header>
 
+    <!-- Content Area: History List -->
     <main class="window-content">
-      <div class="card test-card">
-        <h2>IPC Scaffold Verification</h2>
-        <p class="description">
-          Click below to test inter-process communication between the sandboxed 
-          <strong>Renderer</strong> and the privileged <strong>Main</strong> process via <code>window.api.ping()</code>.
-        </p>
-
-        <button id="ping-btn" class="action-btn">
-          <span class="btn-text">Ping Main Process</span>
-        </button>
-
-        <div class="result-box">
-          <span class="result-label">Main Response:</span>
-          <code id="ping-result" class="result-value">Waiting for ping...</code>
-        </div>
+      <!-- Empty State -->
+      <div id="empty-state" class="empty-state">
+        <div class="empty-icon">✂️</div>
+        <h3>No clipboard history yet</h3>
+        <p>Copy any text (<code>⌘C</code>) in any macOS app to see it captured here live.</p>
       </div>
 
-      <div class="info-card">
-        <h3>Active Security Settings</h3>
-        <ul>
-          <li><code>contextIsolation: true</code></li>
-          <li><code>nodeIntegration: false</code></li>
-          <li><code>sandbox: true</code></li>
-          <li>Strict Content Security Policy (CSP)</li>
-        </ul>
-      </div>
+      <!-- History Items List -->
+      <ul id="history-list" class="history-list" style="display: none;">
+        <!-- Dynamically populated via popup.js -->
+      </ul>
     </main>
 
+    <!-- Window Footer -->
     <footer class="window-footer">
-      <span>ClipVault &bull; macOS Clipboard Manager</span>
+      <span class="watcher-status">
+        <span class="status-dot live"></span>
+        Clipboard watcher active (500ms)
+      </span>
+      <button id="quick-ping-btn" class="quick-ping-btn" title="Verify IPC bridge">Ping IPC</button>
     </footer>
   </div>
 

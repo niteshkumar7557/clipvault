@@ -3,13 +3,15 @@
  * 
  * Electron APIs used:
  * - BrowserWindow: Creates and controls native application windows.
- * - screen: Retrieves display and cursor information for precise window positioning.
  */
 
 const { BrowserWindow } = require('electron');
 const path = require('path');
 
 let popupWindow = null;
+// In Milestone 2, default stayOpen to true so the user can watch the list update
+// live while copying in other apps before Milestone 3 registers the global shortcut.
+let stayOpen = true;
 
 /**
  * Creates the frameless, vibrant macOS popup window according to design.md Section 9.
@@ -57,19 +59,19 @@ function createPopupWindow() {
   popupWindow.loadFile(path.join(__dirname, '../renderer/popup/index.html'));
 
   // BrowserWindow event: 'ready-to-show'
-  // Fires when the renderer has painted the first frame; best time to show the window without flashing
   popupWindow.once('ready-to-show', () => {
     popupWindow.show();
     popupWindow.focus();
   });
 
   // BrowserWindow event: 'blur'
-  // Section 9: hide on blur (unless DevTools is open for debugging)
+  // Section 9: hide on blur (bypassed if stayOpen is true or DevTools is open)
   popupWindow.on('blur', () => {
-    if (!popupWindow.webContents.isDevToolsOpened()) {
-      console.log('[ClipVault] Popup window blurred and hidden (Section 9). Note: Global shortcut (Milestone 3) and Tray (Milestone 4) will toggle it back.');
-      popupWindow.hide();
+    if (stayOpen || popupWindow.webContents.isDevToolsOpened()) {
+      return;
     }
+    console.log('[ClipVault] Popup window blurred and hidden (Section 9).');
+    popupWindow.hide();
   });
 
   return popupWindow;
@@ -83,7 +85,25 @@ function getPopupWindow() {
   return popupWindow;
 }
 
+/**
+ * Sets whether the window should stay visible on blur.
+ * @param {boolean} val 
+ */
+function setStayOpen(val) {
+  stayOpen = Boolean(val);
+}
+
+/**
+ * Returns whether stayOpen is active.
+ * @returns {boolean}
+ */
+function isStayOpen() {
+  return stayOpen;
+}
+
 module.exports = {
   createPopupWindow,
-  getPopupWindow
+  getPopupWindow,
+  setStayOpen,
+  isStayOpen
 };
