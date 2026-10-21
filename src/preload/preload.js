@@ -50,6 +50,18 @@ contextBridge.exposeInMainWorld('api', {
     openExternal: (url) => ipcRenderer.invoke('app:openExternal', url)
   },
 
+  // Theme APIs (Milestone 8)
+  theme: {
+    get: () => ipcRenderer.invoke('theme:get'),
+    set: (source) => ipcRenderer.invoke('theme:set', source)
+  },
+
+  // Privacy & Watcher APIs (Section 11)
+  watcher: {
+    togglePause: () => ipcRenderer.invoke('watcher:togglePause'),
+    isPaused: () => ipcRenderer.invoke('watcher:isPaused')
+  },
+
   // Window APIs
   window: {
     hide: () => ipcRenderer.invoke('window:hide')

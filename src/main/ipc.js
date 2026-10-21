@@ -10,7 +10,7 @@
  * - app: Login item settings.
  */
 
-const { ipcMain, clipboard, dialog, shell, Menu, BrowserWindow, app } = require('electron');
+const { ipcMain, clipboard, dialog, shell, Menu, BrowserWindow, app, nativeTheme } = require('electron');
 const fs = require('fs');
 const {
   getHistory,
@@ -372,6 +372,38 @@ function registerIpcHandlers() {
     }
     await shell.openExternal(url.trim());
     return true;
+  });
+
+  // Milestone 8: nativeTheme live inspection & controls
+  ipcMain.handle('theme:get', async () => {
+    return {
+      shouldUseDarkColors: nativeTheme.shouldUseDarkColors,
+      themeSource: nativeTheme.themeSource
+    };
+  });
+
+  ipcMain.handle('theme:set', async (_event, source) => {
+    if (['system', 'light', 'dark'].includes(source)) {
+      nativeTheme.themeSource = source;
+    }
+    return {
+      shouldUseDarkColors: nativeTheme.shouldUseDarkColors,
+      themeSource: nativeTheme.themeSource
+    };
+  });
+
+  // Privacy & Pause Recording (Section 11)
+  ipcMain.handle('watcher:togglePause', async () => {
+    if (watcherInstance) {
+      const state = watcherInstance.togglePause();
+      rebuildTrayMenu();
+      return state;
+    }
+    return false;
+  });
+
+  ipcMain.handle('watcher:isPaused', async () => {
+    return Boolean(watcherInstance && watcherInstance.isPaused);
   });
 
   // Window hide

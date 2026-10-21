@@ -84,7 +84,18 @@ function rebuildTrayMenu() {
 
   template.push({ type: 'separator' });
 
-  // Section 2: App Controls
+  // Section 2: App Controls & Privacy (Section 11)
+  const isPaused = watcherInstance && watcherInstance.isPaused;
+  template.push({
+    label: isPaused ? '▶  Resume Recording' : '⏸  Pause Recording',
+    click: () => {
+      if (watcherInstance) {
+        watcherInstance.togglePause();
+        rebuildTrayMenu();
+      }
+    }
+  });
+
   template.push({
     label: 'Open ClipVault',
     accelerator: 'Shift+Cmd+V',

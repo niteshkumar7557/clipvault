@@ -4,7 +4,9 @@
   "description": "macOS menu bar clipboard manager and snippet tool built with Electron",
   "main": "src/main/main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder --mac",
+    "pack": "electron-builder --mac --dir"
   },
   "keywords": [
     "electron",
@@ -16,9 +18,46 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
-    "electron": "^45.0.0"
+    "electron": "^45.0.0",
+    "electron-builder": "^26.0.0"
   },
   "dependencies": {
     "electron-store": "^8.2.0"
+  },
+  "build": {
+    "appId": "com.clipvault.app",
+    "productName": "ClipVault",
+    "mac": {
+      "category": "public.app-category.utilities",
+      "icon": "assets/icon.icns",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "darkModeSupport": true
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 380
+      }
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ]
   }
 }

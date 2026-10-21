@@ -24,6 +24,30 @@ class ClipboardWatcher extends EventEmitter {
     this.timer = null;
     this.lastText = '';
     this.isChecking = false;
+    this.isPaused = false;
+  }
+
+  /**
+   * Pauses clipboard recording.
+   */
+  pause() {
+    this.isPaused = true;
+  }
+
+  /**
+   * Resumes clipboard recording.
+   */
+  resume() {
+    this.isPaused = false;
+  }
+
+  /**
+   * Toggles pause state.
+   * @returns {boolean} New paused state
+   */
+  togglePause() {
+    this.isPaused = !this.isPaused;
+    return this.isPaused;
   }
 
   /**
@@ -52,6 +76,11 @@ class ClipboardWatcher extends EventEmitter {
    * Reads clipboard text, checks for empty strings and duplicates, and emits new items.
    */
   async checkClipboard() {
+    // If paused by user (e.g. while entering passwords), ignore clipboard changes
+    if (this.isPaused) {
+      return;
+    }
+
     // Prevent overlapping checks if an async read takes longer than interval
     if (this.isChecking) {
       return;

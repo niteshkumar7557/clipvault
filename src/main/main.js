@@ -12,7 +12,7 @@
  * - Notification: (via notifications.js) System alerts.
  */
 
-const { app } = require('electron');
+const { app, nativeTheme } = require('electron');
 const { createPopupWindow, togglePopupWindow, showPopupWindow } = require('./windows');
 const {
   registerIpcHandlers,
@@ -85,6 +85,12 @@ if (!gotTheLock) {
     // 7. Register global shortcut (CommandOrControl+Shift+V)
     registerShortcuts(() => {
       togglePopupWindow();
+    });
+
+    // 8. nativeTheme event: 'updated' (Milestone 8)
+    // Listens for system dark/light mode switches
+    nativeTheme.on('updated', () => {
+      console.log(`[NativeTheme] System appearance updated. Dark mode active: ${nativeTheme.shouldUseDarkColors}`);
     });
 
     app.on('activate', () => {
