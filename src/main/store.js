@@ -1,11 +1,9 @@
 /**
- * Storage Module - Milestone 5
+ * Storage Module - Milestone 6
  * 
- * Manages persistent storage for clipboard history and application settings
- * using `electron-store`.
- * 
- * Data Model (design.md Section 6):
- * - History Item: { id, type, content, createdAt, pinned, sourceApp }
+ * Manages persistent storage for:
+ * - History Items: { id, type, content, createdAt, pinned, sourceApp }
+ * - Snippets: { id, title, content, tags, createdAt }
  * - Settings: { historyLimit, shortcut, launchAtLogin, showNotifications, ignoredApps }
  */
 
@@ -17,7 +15,15 @@ const store = new Store({
   name: 'clipvault-data',
   defaults: {
     history: [],
-    snippets: [],
+    snippets: [
+      {
+        id: 'default-snippet-1',
+        title: 'Email Sign-off',
+        content: 'Best regards,\nClipVault User',
+        tags: ['email', 'work'],
+        createdAt: Date.now()
+      }
+    ],
     settings: {
       historyLimit: 200,
       shortcut: 'CommandOrControl+Shift+V',
@@ -60,7 +66,6 @@ function pruneHistory(items, limit) {
   const excessCount = items.length - limit;
   const unpinnedIndicesToRemove = new Set();
 
-  // Walk backwards from oldest to newest to find unpinned items to evict
   for (let i = items.length - 1; i >= 0 && unpinnedIndicesToRemove.size < excessCount; i--) {
     if (!items[i].pinned) {
       unpinnedIndicesToRemove.add(i);
@@ -71,7 +76,7 @@ function pruneHistory(items, limit) {
 }
 
 /**
- * Returns all history items with pinned items sorted first, then newest first.
+ * Returns all history items with pinned items sorted first.
  * @returns {Array}
  */
 function getHistory() {
@@ -81,8 +86,6 @@ function getHistory() {
 
 /**
  * Searches history items matching the query substring (case-insensitive).
- * Pinned items appear first in search results.
- * 
  * @param {string} query 
  * @returns {Array}
  */
@@ -102,14 +105,9 @@ function searchHistory(query) {
 
 /**
  * Adds a new item to history.
- * - Places the new item at the top.
- * - Deduplicates: If the exact text already exists elsewhere in history,
- *   preserves its pinned status and moves it to the top.
- * - Caps by historyLimit without ever evicting pinned items.
- * 
- * @param {string} content - The copied text content
- * @param {string} [type='text'] - 'text' or 'image'
- * @returns {Object} The added history item
+ * @param {string} content 
+ * @param {string} [type='text'] 
+ * @returns {Object}
  */
 function addHistoryItem(content, type = 'text') {
   if (!content || typeof content !== 'string' || content.trim() === '') {
@@ -117,17 +115,14 @@ function addHistoryItem(content, type = 'text') {
   }
 
   const history = store.get('history', []);
-  const settings = store.get('settings');
-  const limit = (settings && settings.historyLimit) ? settings.historyLimit : 200;
+  const settings = store.get('settings') || {};
+  const limit = settings.historyLimit || 200;
 
-  // Check if identical content exists in history
   const existingIndex = history.findIndex(item => item.content === content && item.type === type);
   let isPinned = false;
 
   if (existingIndex !== -1) {
-    // Preserve pinned state if it was already pinned
     isPinned = history[existingIndex].pinned;
-    // Remove previous instance so it can be moved to the top
     history.splice(existingIndex, 1);
   }
 
@@ -140,13 +135,8 @@ function addHistoryItem(content, type = 'text') {
     sourceApp: null
   };
 
-  // Insert newest item at the top
   history.unshift(newItem);
-
-  // Prune history respecting historyLimit and never evicting pinned items
   const pruned = pruneHistory(history, limit);
-
-  // Persist to disk via electron-store
   store.set('history', pruned);
 
   return newItem;
@@ -154,9 +144,8 @@ function addHistoryItem(content, type = 'text') {
 
 /**
  * Toggles the pinned status of a history item by ID.
- * 
  * @param {string} id 
- * @returns {Object|null} The updated item, or null if not found
+ * @returns {Object|null}
  */
 function togglePin(id) {
   if (!id || typeof id !== 'string') {
@@ -176,9 +165,8 @@ function togglePin(id) {
 
 /**
  * Deletes a history item by ID.
- * 
  * @param {string} id 
- * @returns {boolean} True if an item was removed, false otherwise
+ * @returns {boolean}
  */
 function deleteHistoryItem(id) {
   if (!id || typeof id !== 'string') {
@@ -198,23 +186,6 @@ function deleteHistoryItem(id) {
 }
 
 /**
- * Returns the current application settings.
- * @returns {Object}
- */
-function getSettings() {
-  return store.get('settings');
-}
-
-/**
- * Updates a setting value.
- * @param {string} key 
- * @param {*} value 
- */
-function setSetting(key, value) {
-  store.set(`settings.${key}`, value);
-}
-
-/**
  * Clears all unpinned history items.
  */
 function clearHistory() {
@@ -224,6 +195,158 @@ function clearHistory() {
   return pinnedOnly;
 }
 
+// -----------------------------------------------------------------------------
+// SNIPPETS CRUD (Milestone 6)
+// -----------------------------------------------------------------------------
+
+/**
+ * Normalizes tags input into a clean array of strings.
+ * @param {Array|string} tags 
+ * @returns {Array<string>}
+ */
+function normalizeTags(tags) {
+  if (Array.isArray(tags)) {
+    return tags.map(t => String(t).trim()).filter(Boolean);
+  }
+  if (typeof tags === 'string') {
+    return tags.split(',').map(t => t.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+/**
+ * Returns all snippets.
+ * @returns {Array}
+ */
+function getSnippets() {
+  return store.get('snippets', []);
+}
+
+/**
+ * Creates a new snippet.
+ * @param {Object} data 
+ * @param {string} data.title 
+ * @param {string} data.content 
+ * @param {Array<string>|string} [data.tags] 
+ * @returns {Object} Created snippet
+ */
+function createSnippet({ title, content, tags = [] }) {
+  if (!title || typeof title !== 'string' || title.trim() === '') {
+    throw new Error('Snippet title is required');
+  }
+  if (!content || typeof content !== 'string' || content.trim() === '') {
+    throw new Error('Snippet content is required');
+  }
+
+  const snippets = store.get('snippets', []);
+  const newSnippet = {
+    id: crypto.randomUUID(),
+    title: title.trim(),
+    content,
+    tags: normalizeTags(tags),
+    createdAt: Date.now()
+  };
+
+  snippets.unshift(newSnippet);
+  store.set('snippets', snippets);
+  return newSnippet;
+}
+
+/**
+ * Updates an existing snippet by ID.
+ * @param {string} id 
+ * @param {Object} updates 
+ * @returns {Object} Updated snippet
+ */
+function updateSnippet(id, updates) {
+  if (!id || typeof id !== 'string') {
+    throw new Error('Invalid snippet ID');
+  }
+
+  const snippets = store.get('snippets', []);
+  const index = snippets.findIndex(s => s.id === id);
+  if (index === -1) {
+    throw new Error('Snippet not found');
+  }
+
+  const existing = snippets[index];
+  const updated = {
+    ...existing,
+    title: typeof updates.title === 'string' && updates.title.trim() !== '' ? updates.title.trim() : existing.title,
+    content: typeof updates.content === 'string' && updates.content.trim() !== '' ? updates.content : existing.content,
+    tags: updates.tags !== undefined ? normalizeTags(updates.tags) : existing.tags
+  };
+
+  snippets[index] = updated;
+  store.set('snippets', snippets);
+  return updated;
+}
+
+/**
+ * Deletes a snippet by ID.
+ * @param {string} id 
+ * @returns {boolean}
+ */
+function deleteSnippet(id) {
+  if (!id || typeof id !== 'string') {
+    throw new Error('Invalid snippet ID');
+  }
+
+  const snippets = store.get('snippets', []);
+  const initialLength = snippets.length;
+  const filtered = snippets.filter(s => s.id !== id);
+
+  if (filtered.length !== initialLength) {
+    store.set('snippets', filtered);
+    return true;
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
+// SETTINGS (Milestone 6)
+// -----------------------------------------------------------------------------
+
+/**
+ * Returns current application settings.
+ * @returns {Object}
+ */
+function getSettings() {
+  return store.get('settings', {
+    historyLimit: 200,
+    shortcut: 'CommandOrControl+Shift+V',
+    launchAtLogin: false,
+    showNotifications: true,
+    ignoredApps: []
+  });
+}
+
+/**
+ * Updates a specific setting and applies side effects immediately.
+ * @param {string} key 
+ * @param {*} value 
+ * @returns {Object} Updated settings
+ */
+function setSetting(key, value) {
+  if (!key || typeof key !== 'string') {
+    throw new Error('Setting key must be a string');
+  }
+
+  store.set(`settings.${key}`, value);
+
+  // If historyLimit changed, prune existing history to match new limit immediately
+  if (key === 'historyLimit') {
+    const limit = Number(value);
+    if (!isNaN(limit) && limit > 0) {
+      const history = store.get('history', []);
+      const pruned = pruneHistory(history, limit);
+      store.set('history', pruned);
+    }
+  }
+
+  return getSettings();
+}
+
 module.exports = {
   store,
   getHistory,
@@ -231,9 +354,15 @@ module.exports = {
   addHistoryItem,
   togglePin,
   deleteHistoryItem,
-  getSettings,
-  setSetting,
   clearHistory,
   pruneHistory,
-  sortHistory
+  sortHistory,
+  // Snippets
+  getSnippets,
+  createSnippet,
+  updateSnippet,
+  deleteSnippet,
+  // Settings
+  getSettings,
+  setSetting
 };

@@ -11,7 +11,7 @@
 const { Tray, Menu, nativeImage, clipboard, app } = require('electron');
 const path = require('path');
 const { getHistory } = require('./store');
-const { showPopupWindow, hidePopupWindow } = require('./windows');
+const { showPopupWindow, hidePopupWindow, openSettingsWindow } = require('./windows');
 
 let trayInstance = null;
 let watcherInstance = null;
@@ -96,8 +96,7 @@ function rebuildTrayMenu() {
   template.push({
     label: 'Settings...',
     click: () => {
-      // Placeholder for Milestone 6 Settings window
-      console.log('[Tray] Settings clicked (Milestone 6)');
+      openSettingsWindow();
     }
   });
 

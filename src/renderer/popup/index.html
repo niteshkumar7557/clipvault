@@ -15,44 +15,91 @@
       <div class="app-brand">
         <span class="app-icon">📋</span>
         <h1 class="app-title">ClipVault</h1>
-        <span id="item-count-badge" class="badge">0</span>
       </div>
-      <div class="shortcut-pill" title="Global shortcut">
-        <kbd>⇧⌘V</kbd>
+      <div class="header-right">
+        <button id="open-settings-btn" class="header-icon-btn" title="Open Settings Window">⚙️</button>
+        <div class="shortcut-pill" title="Global shortcut">
+          <kbd>⇧⌘V</kbd>
+        </div>
       </div>
     </header>
 
-    <!-- Search Bar per Milestone 5 -->
+    <!-- Tab Bar: History vs Snippets -->
+    <div class="tab-bar">
+      <button id="tab-history-btn" class="tab-btn active">
+        <span>History</span>
+        <span id="history-count-badge" class="tab-badge">0</span>
+      </button>
+      <button id="tab-snippets-btn" class="tab-btn">
+        <span>Snippets</span>
+        <span id="snippets-count-badge" class="tab-badge">0</span>
+      </button>
+    </div>
+
+    <!-- Search & Action Section -->
     <div class="search-section">
       <div class="search-bar">
         <span class="search-icon">🔍</span>
         <input 
           type="text" 
           id="search-input" 
-          placeholder="Search clips..." 
+          placeholder="Search history..." 
           autocomplete="off" 
           spellcheck="false"
         >
         <button id="clear-search-btn" class="clear-search-btn" style="display: none;" title="Clear search">✕</button>
       </div>
+      <button id="add-snippet-btn" class="add-snippet-btn" style="display: none;" title="Create new snippet">+ New</button>
     </div>
 
-    <!-- Content: History Items List -->
+    <!-- Main Content Area -->
     <main class="window-content">
-      <!-- Empty State -->
-      <div id="empty-state" class="empty-state">
-        <div class="empty-icon" id="empty-icon">✂️</div>
-        <h3 id="empty-title">No clipboard history</h3>
-        <p id="empty-desc">Copy any text with <kbd>⌘C</kbd> to record it here.</p>
+      <!-- 1. History Tab View -->
+      <div id="history-view" class="tab-view active">
+        <div id="history-empty" class="empty-state">
+          <div class="empty-icon" id="empty-icon">✂️</div>
+          <h3 id="empty-title">No clipboard history</h3>
+          <p id="empty-desc">Copy any text with <kbd>⌘C</kbd> to record it here.</p>
+        </div>
+        <ul id="history-list" class="history-list" style="display: none;"></ul>
       </div>
 
-      <!-- History Items -->
-      <ul id="history-list" class="history-list" style="display: none;">
-        <!-- Populated dynamically via popup.js -->
-      </ul>
+      <!-- 2. Snippets Tab View -->
+      <div id="snippets-view" class="tab-view" style="display: none;">
+        <div id="snippets-empty" class="empty-state" style="display: none;">
+          <div class="empty-icon">📝</div>
+          <h3>No snippets yet</h3>
+          <p>Create reusable text snippets for fast access anytime.</p>
+          <button id="empty-add-snippet-btn" class="primary-btn">Create First Snippet</button>
+        </div>
+        <ul id="snippets-list" class="snippets-list"></ul>
+      </div>
     </main>
 
-    <!-- Footer: Keyboard Navigation & Context Menu Hints -->
+    <!-- Snippet Modal (Create & Edit) -->
+    <div id="snippet-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-card">
+        <h3 id="modal-title">New Snippet</h3>
+        <div class="form-group">
+          <label for="snippet-title-input">Title</label>
+          <input type="text" id="snippet-title-input" placeholder="e.g. Email signature" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="snippet-tags-input">Tags <span class="label-hint">(comma separated)</span></label>
+          <input type="text" id="snippet-tags-input" placeholder="e.g. work, email" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="snippet-content-input">Content</label>
+          <textarea id="snippet-content-input" rows="4" placeholder="Snippet content to copy..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button id="modal-cancel-btn" class="btn btn-secondary">Cancel</button>
+          <button id="modal-save-btn" class="btn btn-primary">Save Snippet</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
     <footer class="window-footer">
       <div class="nav-hints">
         <span class="hint-item"><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>

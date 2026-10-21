@@ -1,9 +1,9 @@
 /**
- * Preload Script - Milestone 5
+ * Preload Script - Milestone 6
  * 
  * Electron APIs used:
- * - contextBridge: Safely bridges APIs between the isolated preload world and the renderer window.
- * - ipcRenderer: Invokes main handlers and listens for events pushed from main.
+ * - contextBridge: Safely bridges APIs between preload and renderer worlds.
+ * - ipcRenderer: Invokes main handlers and subscribes to events.
  */
 
 const { contextBridge, ipcRenderer } = require('electron');
@@ -14,62 +14,36 @@ contextBridge.exposeInMainWorld('api', {
 
   // History APIs (Milestones 2, 3, 5)
   history: {
-    /**
-     * Retrieves all history items from the main store.
-     * @returns {Promise<Array>}
-     */
     get: () => ipcRenderer.invoke('history:get'),
-
-    /**
-     * Searches history items matching query string.
-     * @param {string} query
-     * @returns {Promise<Array>}
-     */
     search: (query) => ipcRenderer.invoke('history:search', query),
-
-    /**
-     * Writes selected item back to clipboard and hides popup.
-     * @param {string} id
-     * @returns {Promise<boolean>}
-     */
     copy: (id) => ipcRenderer.invoke('history:copy', id),
-
-    /**
-     * Toggles pin status of an item.
-     * @param {string} id
-     * @returns {Promise<Object|null>}
-     */
     pin: (id) => ipcRenderer.invoke('history:pin', id),
-
-    /**
-     * Deletes a history item.
-     * @param {string} id
-     * @returns {Promise<boolean>}
-     */
     delete: (id) => ipcRenderer.invoke('history:delete', id),
-
-    /**
-     * Opens native macOS context menu for an item.
-     * @param {string} id
-     * @returns {Promise<boolean>}
-     */
     contextMenu: (id) => ipcRenderer.invoke('history:contextMenu', id)
+  },
+
+  // Snippets APIs (Milestone 6)
+  snippets: {
+    get: () => ipcRenderer.invoke('snippets:get'),
+    create: (data) => ipcRenderer.invoke('snippets:create', data),
+    update: (id, data) => ipcRenderer.invoke('snippets:update', id, data),
+    delete: (id) => ipcRenderer.invoke('snippets:delete', id),
+    copy: (id) => ipcRenderer.invoke('snippets:copy', id)
+  },
+
+  // Settings APIs (Milestone 6)
+  settings: {
+    get: () => ipcRenderer.invoke('settings:get'),
+    set: (key, value) => ipcRenderer.invoke('settings:set', key, value),
+    open: () => ipcRenderer.invoke('settings:open')
   },
 
   // Window APIs
   window: {
-    /**
-     * Dismisses the popup window (e.g. on Esc key).
-     * @returns {Promise<boolean>}
-     */
     hide: () => ipcRenderer.invoke('window:hide')
   },
 
-  /**
-   * Subscribes to live history updates pushed by the main process.
-   * @param {Function} callback
-   * @returns {Function} Cleanup function
-   */
+  // Subscriptions
   onHistoryUpdated: (callback) => {
     if (typeof callback !== 'function') return () => {};
     const handler = (_event, items) => callback(items);
@@ -77,11 +51,13 @@ contextBridge.exposeInMainWorld('api', {
     return () => ipcRenderer.removeListener('history:updated', handler);
   },
 
-  /**
-   * Subscribes to window shown events to reset UI state.
-   * @param {Function} callback
-   * @returns {Function} Cleanup function
-   */
+  onSnippetsUpdated: (callback) => {
+    if (typeof callback !== 'function') return () => {};
+    const handler = (_event, items) => callback(items);
+    ipcRenderer.on('snippets:updated', handler);
+    return () => ipcRenderer.removeListener('snippets:updated', handler);
+  },
+
   onWindowShown: (callback) => {
     if (typeof callback !== 'function') return () => {};
     const handler = () => callback();

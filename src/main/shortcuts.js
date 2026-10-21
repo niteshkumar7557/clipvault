@@ -1,15 +1,14 @@
 /**
- * Global Shortcuts Module
+ * Global Shortcuts Module - Milestone 6
  * 
  * Electron API: globalShortcut
- * The globalShortcut module registers and unregisters system-wide keyboard shortcuts
- * with the operating system so that the application can capture keystrokes even when
- * it does NOT have focus.
+ * Registers and dynamically updates system-wide hotkeys.
  */
 
 const { globalShortcut } = require('electron');
 
 let currentShortcut = 'CommandOrControl+Shift+V';
+let currentToggleCallback = null;
 
 /**
  * Registers the global shortcut to toggle the popup window.
@@ -18,24 +17,28 @@ let currentShortcut = 'CommandOrControl+Shift+V';
  * @param {string} [shortcut='CommandOrControl+Shift+V'] - Keyboard accelerator string
  * @returns {boolean} Whether registration was successful
  */
-function registerShortcuts(onToggle, shortcut = 'CommandOrControl+Shift+V') {
-  currentShortcut = shortcut;
+function registerShortcuts(onToggle, shortcut) {
+  if (typeof onToggle === 'function') {
+    currentToggleCallback = onToggle;
+  }
+  if (shortcut && typeof shortcut === 'string') {
+    currentShortcut = shortcut;
+  }
 
   // Unregister existing shortcut before registering a new one
   if (globalShortcut.isRegistered(currentShortcut)) {
     globalShortcut.unregister(currentShortcut);
   }
 
-  // globalShortcut.register: Registers an OS-level keyboard hook
   const success = globalShortcut.register(currentShortcut, () => {
-    console.log(`[Shortcuts] Global shortcut pressed: ${currentShortcut}`);
-    if (typeof onToggle === 'function') {
-      onToggle();
+    console.log(`[Shortcuts] Global shortcut triggered: ${currentShortcut}`);
+    if (typeof currentToggleCallback === 'function') {
+      currentToggleCallback();
     }
   });
 
   if (!success) {
-    console.error(`[Shortcuts] Failed to register global shortcut: ${currentShortcut}. It may be reserved by the OS or another app.`);
+    console.error(`[Shortcuts] Failed to register global shortcut: ${currentShortcut}`);
   } else {
     console.log(`[Shortcuts] Successfully registered global shortcut: ${currentShortcut}`);
   }
@@ -44,8 +47,41 @@ function registerShortcuts(onToggle, shortcut = 'CommandOrControl+Shift+V') {
 }
 
 /**
- * Unregisters all global shortcuts when the application is quitting.
- * Must be called in app 'will-quit' lifecycle to release system hotkeys.
+ * Updates the global shortcut live without restarting the application.
+ * 
+ * @param {string} newShortcut 
+ * @returns {boolean}
+ */
+function updateShortcut(newShortcut) {
+  if (!newShortcut || typeof newShortcut !== 'string') {
+    return false;
+  }
+
+  // Unregister old
+  if (globalShortcut.isRegistered(currentShortcut)) {
+    globalShortcut.unregister(currentShortcut);
+  }
+
+  currentShortcut = newShortcut;
+  const success = globalShortcut.register(currentShortcut, () => {
+    if (typeof currentToggleCallback === 'function') {
+      currentToggleCallback();
+    }
+  });
+
+  return success;
+}
+
+/**
+ * Returns currently registered shortcut string.
+ * @returns {string}
+ */
+function getCurrentShortcut() {
+  return currentShortcut;
+}
+
+/**
+ * Unregisters all global shortcuts when application is quitting.
  */
 function unregisterShortcuts() {
   globalShortcut.unregisterAll();
@@ -54,5 +90,7 @@ function unregisterShortcuts() {
 
 module.exports = {
   registerShortcuts,
+  updateShortcut,
+  getCurrentShortcut,
   unregisterShortcuts
 };
