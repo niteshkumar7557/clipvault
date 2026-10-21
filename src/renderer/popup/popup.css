@@ -1,4 +1,4 @@
-/* Popup HUD styling - Milestone 2 */
+/* Popup HUD styling - Milestone 3 */
 
 body {
   width: 100vw;
@@ -7,6 +7,7 @@ body {
   justify-content: center;
   align-items: center;
   overflow: hidden;
+  background: transparent;
 }
 
 .window-container {
@@ -17,15 +18,15 @@ body {
   background-color: var(--bg-color);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
   overflow: hidden;
 }
 
 /* Header */
 .window-header {
-  height: 44px;
+  height: 42px;
   padding: 0 14px;
   display: flex;
   align-items: center;
@@ -61,40 +62,27 @@ body {
   color: var(--accent-color);
 }
 
-.header-actions {
-  -webkit-app-region: no-drag;
-  display: flex;
-  align-items: center;
-}
-
-.icon-toggle-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  border-radius: var(--radius-sm);
-  background: transparent;
+.shortcut-pill kbd {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.06);
   border: 1px solid var(--border-color);
   color: var(--text-muted);
-  font-size: 11px;
-  cursor: pointer;
-  transition: all 0.15s ease;
 }
 
-.icon-toggle-btn.active {
-  background: rgba(0, 113, 227, 0.15);
-  border-color: rgba(0, 113, 227, 0.35);
-  color: var(--accent-color);
+@media (prefers-color-scheme: dark) {
+  .shortcut-pill kbd {
+    background: rgba(255, 255, 255, 0.1);
+  }
 }
 
-.icon-toggle-btn:hover {
-  opacity: 0.85;
-}
-
-/* Main Content Area */
+/* Content Area */
 .window-content {
   flex: 1;
-  padding: 10px;
+  padding: 8px 10px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -104,20 +92,20 @@ body {
 .empty-state {
   margin: auto;
   text-align: center;
-  padding: 24px 16px;
-  max-width: 280px;
+  padding: 28px 16px;
+  max-width: 260px;
 }
 
 .empty-icon {
   font-size: 32px;
-  margin-bottom: 10px;
-  opacity: 0.7;
+  margin-bottom: 8px;
+  opacity: 0.6;
 }
 
 .empty-state h3 {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .empty-state p {
@@ -126,11 +114,14 @@ body {
   line-height: 1.4;
 }
 
-.empty-state code {
-  font-family: "SF Mono", Menlo, monospace;
-  background: rgba(125, 125, 125, 0.15);
-  padding: 1px 4px;
+kbd {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  font-size: 11px;
+  padding: 1px 5px;
   border-radius: 4px;
+  background: rgba(125, 125, 125, 0.16);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
 }
 
 /* History List */
@@ -138,41 +129,46 @@ body {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .history-item {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: var(--radius-md);
-  padding: 10px 12px;
+  border-left: 3px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
-  cursor: default;
-  animation: fadeIn 0.2s ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  gap: 4px;
+  transition: all 0.12s ease;
+  cursor: pointer;
 }
 
 .history-item:hover {
-  background: rgba(255, 255, 255, 0.8);
-  border-color: rgba(0, 113, 227, 0.4);
+  background: rgba(255, 255, 255, 0.75);
+  border-color: rgba(0, 113, 227, 0.3);
 }
 
 @media (prefers-color-scheme: dark) {
   .history-item:hover {
-    background: rgba(55, 55, 55, 0.85);
+    background: rgba(55, 55, 55, 0.75);
+  }
+}
+
+/* Keyboard Navigation Selected State (Up/Down arrow selection) */
+.history-item.selected {
+  background: rgba(0, 113, 227, 0.12);
+  border-color: rgba(0, 113, 227, 0.4);
+  border-left: 3px solid var(--accent-color);
+  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.15);
+}
+
+@media (prefers-color-scheme: dark) {
+  .history-item.selected {
+    background: rgba(41, 151, 255, 0.2);
+    border-color: rgba(41, 151, 255, 0.5);
+    border-left: 3px solid var(--accent-color);
   }
 }
 
@@ -180,7 +176,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--text-muted);
 }
 
@@ -198,70 +194,54 @@ body {
   font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
-  padding: 1px 5px;
-  border-radius: 4px;
+  padding: 1px 4px;
+  border-radius: 3px;
   background: rgba(0, 0, 0, 0.06);
   color: var(--text-muted);
 }
 
 @media (prefers-color-scheme: dark) {
   .type-pill {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.12);
   }
 }
 
 .item-content {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
-  font-size: 12.5px;
-  line-height: 1.4;
+  font-size: 12px;
+  line-height: 1.35;
   color: var(--text-color);
   word-break: break-word;
   white-space: pre-wrap;
-  max-height: 56px;
+  max-height: 52px;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
 }
 
-/* Footer */
+/* Footer Navigation Hints */
 .window-footer {
   height: 32px;
   padding: 0 12px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   border-top: 1px solid var(--border-color);
   font-size: 11px;
   color: var(--text-muted);
   flex-shrink: 0;
 }
 
-.watcher-status {
+.nav-hints {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 12px;
 }
 
-.status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background-color: #34c759;
-  display: inline-block;
-  box-shadow: 0 0 6px rgba(52, 199, 89, 0.6);
-}
-
-.quick-ping-btn {
-  background: transparent;
-  border: none;
-  color: var(--accent-color);
+.hint-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 11px;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.quick-ping-btn:hover {
-  background: rgba(0, 113, 227, 0.1);
 }

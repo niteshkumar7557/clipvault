@@ -10,44 +10,40 @@
 </head>
 <body>
   <div class="window-container">
-    <!-- Header Area -->
+    <!-- Header -->
     <header class="window-header">
       <div class="app-brand">
         <span class="app-icon">📋</span>
         <h1 class="app-title">ClipVault</h1>
         <span id="item-count-badge" class="badge">0</span>
       </div>
-      <div class="header-actions">
-        <!-- Allows toggling stay-on-top so user can test live updates while copying in other apps -->
-        <button id="pin-window-btn" class="icon-toggle-btn active" title="Toggle keep window open on blur">
-          <span class="pin-icon">📌</span>
-          <span id="pin-status-text" class="btn-label">Pinned</span>
-        </button>
+      <div class="shortcut-pill" title="Global shortcut to summon popup">
+        <kbd>⇧⌘V</kbd>
       </div>
     </header>
 
-    <!-- Content Area: History List -->
+    <!-- Content: History Items List -->
     <main class="window-content">
       <!-- Empty State -->
       <div id="empty-state" class="empty-state">
         <div class="empty-icon">✂️</div>
-        <h3>No clipboard history yet</h3>
-        <p>Copy any text (<code>⌘C</code>) in any macOS app to see it captured here live.</p>
+        <h3>No clipboard history</h3>
+        <p>Copy any text with <kbd>⌘C</kbd> to record it here.</p>
       </div>
 
-      <!-- History Items List -->
+      <!-- History Items -->
       <ul id="history-list" class="history-list" style="display: none;">
-        <!-- Dynamically populated via popup.js -->
+        <!-- Populated dynamically via popup.js -->
       </ul>
     </main>
 
-    <!-- Window Footer -->
+    <!-- Footer: Keyboard Navigation Hints per Milestone 3 -->
     <footer class="window-footer">
-      <span class="watcher-status">
-        <span class="status-dot live"></span>
-        Clipboard watcher active (500ms)
-      </span>
-      <button id="quick-ping-btn" class="quick-ping-btn" title="Verify IPC bridge">Ping IPC</button>
+      <div class="nav-hints">
+        <span class="hint-item"><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>
+        <span class="hint-item"><kbd>↵</kbd> Copy</span>
+        <span class="hint-item"><kbd>Esc</kbd> Close</span>
+      </div>
     </footer>
   </div>
 

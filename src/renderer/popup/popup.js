@@ -1,23 +1,26 @@
 /**
- * Popup Renderer Script - Milestone 2
+ * Popup Renderer Script - Milestone 3
  * 
- * Handles:
- * 1. Initial retrieval of history items via `window.api.history.get()`
- * 2. Real-time updates via `window.api.onHistoryUpdated(callback)`
- * 3. DOM rendering with HTML escaping and relative timestamps
- * 4. Window pin toggle for testing blur behavior
+ * Features:
+ * 1. History items retrieval & live update subscription.
+ * 2. Keyboard Navigation:
+ *    - ArrowDown / ArrowUp to move selection.
+ *    - Enter to copy selected item to clipboard and hide popup.
+ *    - Esc to dismiss/hide the popup.
+ * 3. Mouse click to copy.
+ * 4. Window focus/shown reset.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
   const emptyState = document.getElementById('empty-state');
   const historyList = document.getElementById('history-list');
   const itemCountBadge = document.getElementById('item-count-badge');
-  const pinWindowBtn = document.getElementById('pin-window-btn');
-  const pinStatusText = document.getElementById('pin-status-text');
-  const quickPingBtn = document.getElementById('quick-ping-btn');
+
+  let items = [];
+  let selectedIndex = 0;
 
   /**
-   * Safely escapes HTML strings to prevent XSS from copied code/text.
+   * Safely escapes HTML strings to prevent XSS.
    * @param {string} str 
    * @returns {string}
    */
@@ -32,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /**
-   * Formats a timestamp into a friendly relative or short time string.
+   * Formats a timestamp into a friendly relative time string.
    * @param {number} timestamp 
    * @returns {string}
    */
@@ -49,15 +52,62 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /**
-   * Renders the list of history items into the DOM.
-   * @param {Array} items 
+   * Updates the selected item index and scrolls it into view.
+   * @param {number} newIndex 
    */
-  function renderHistory(items) {
-    if (!items || items.length === 0) {
+  function updateSelection(newIndex) {
+    if (items.length === 0) {
+      selectedIndex = -1;
+      return;
+    }
+
+    // Clamp or wrap selection index
+    if (newIndex < 0) {
+      selectedIndex = items.length - 1;
+    } else if (newIndex >= items.length) {
+      selectedIndex = 0;
+    } else {
+      selectedIndex = newIndex;
+    }
+
+    const itemElements = historyList.querySelectorAll('.history-item');
+    itemElements.forEach((el, index) => {
+      if (index === selectedIndex) {
+        el.classList.add('selected');
+        // Ensure the active item stays in visible scroll area
+        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      } else {
+        el.classList.remove('selected');
+      }
+    });
+  }
+
+  /**
+   * Copies the selected item to clipboard and dismisses the popup window.
+   * @param {string} id 
+   */
+  async function copyItem(id) {
+    if (!id) return;
+    try {
+      await window.api.history.copy(id);
+    } catch (err) {
+      console.error('[Popup] Failed to copy item:', err);
+    }
+  }
+
+  /**
+   * Renders the list of history items into the DOM.
+   * @param {Array} newItems 
+   */
+  function renderHistory(newItems) {
+    items = Array.isArray(newItems) ? newItems : [];
+
+    if (items.length === 0) {
       emptyState.style.display = 'block';
       historyList.style.display = 'none';
       historyList.innerHTML = '';
       itemCountBadge.textContent = '0';
+      selectedIndex = -1;
       return;
     }
 
@@ -69,17 +119,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     const html = items.map((item, index) => {
       const escapedContent = escapeHtml(item.content);
       const timeStr = formatTimestamp(item.createdAt);
-      const isPinned = item.pinned ? '📌 Pinned' : '';
-      const charCount = `${item.content.length} chars`;
+      const isPinned = item.pinned ? '📌' : '';
+      const charCount = `${item.content.length}c`;
+      const isSelected = index === selectedIndex ? 'selected' : '';
 
       return `
-        <li class="history-item" data-id="${item.id}" data-index="${index}">
+        <li class="history-item ${isSelected}" data-id="${item.id}" data-index="${index}">
           <div class="item-meta">
             <span class="item-time">${timeStr}</span>
             <div class="item-tags">
               ${isPinned ? `<span class="type-pill">${isPinned}</span>` : ''}
               <span class="type-pill">${charCount}</span>
-              <span class="type-pill">${item.type || 'TEXT'}</span>
             </div>
           </div>
           <div class="item-content">${escapedContent}</div>
@@ -88,6 +138,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     }).join('');
 
     historyList.innerHTML = html;
+
+    // Attach click handlers to each card
+    const itemElements = historyList.querySelectorAll('.history-item');
+    itemElements.forEach((el) => {
+      el.addEventListener('click', () => {
+        const id = el.getAttribute('data-id');
+        const idx = parseInt(el.getAttribute('data-index'), 10);
+        updateSelection(idx);
+        copyItem(id);
+      });
+    });
+
+    // Ensure valid selection
+    if (selectedIndex < 0 || selectedIndex >= items.length) {
+      updateSelection(0);
+    }
   }
 
   // 1. Initial Load: Fetch history from main store
@@ -95,58 +161,54 @@ document.addEventListener('DOMContentLoaded', async () => {
     const initialItems = await window.api.history.get();
     renderHistory(initialItems);
   } catch (err) {
-    console.error('Failed to load initial history:', err);
+    console.error('[Popup] Failed to load initial history:', err);
   }
 
   // 2. Real-Time Subscription: Listen for live updates emitted by main process
   window.api.onHistoryUpdated((updatedItems) => {
-    console.log('[Popup] Live history update received:', updatedItems.length, 'items');
     renderHistory(updatedItems);
   });
 
-  // 3. Window Pin Toggle (Controls whether window stays open or hides on blur)
-  if (pinWindowBtn && window.api.window) {
-    try {
-      const isPinned = await window.api.window.getStayOpen();
-      updatePinUI(isPinned);
-
-      pinWindowBtn.addEventListener('click', async () => {
-        const currentlyPinned = pinWindowBtn.classList.contains('active');
-        const newState = await window.api.window.setStayOpen(!currentlyPinned);
-        updatePinUI(newState);
-      });
-    } catch (err) {
-      console.warn('StayOpen window API unavailable:', err);
-    }
-  }
-
-  function updatePinUI(pinned) {
-    if (pinned) {
-      pinWindowBtn.classList.add('active');
-      pinStatusText.textContent = 'Pinned';
-      pinWindowBtn.title = 'Window stays visible on blur (useful for live copy testing)';
-    } else {
-      pinWindowBtn.classList.remove('active');
-      pinStatusText.textContent = 'Auto-hide';
-      pinWindowBtn.title = 'Window will hide when clicking away (design Section 9)';
-    }
-  }
-
-  // 4. Quick Ping Button: Verifies IPC connection
-  if (quickPingBtn) {
-    quickPingBtn.addEventListener('click', async () => {
-      try {
-        const reply = await window.api.ping();
-        const originalText = quickPingBtn.textContent;
-        quickPingBtn.textContent = '✓ ' + reply;
-        quickPingBtn.style.color = '#34c759';
-        setTimeout(() => {
-          quickPingBtn.textContent = originalText;
-          quickPingBtn.style.color = '';
-        }, 1500);
-      } catch (err) {
-        quickPingBtn.textContent = 'Ping failed';
-      }
+  // 3. Reset selection when window is summoned
+  if (window.api.onWindowShown) {
+    window.api.onWindowShown(() => {
+      updateSelection(0);
     });
   }
+
+  // 4. Keyboard Navigation: Up, Down, Enter, Esc
+  window.addEventListener('keydown', (e) => {
+    // Esc: Hide popup window
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      window.api.window.hide();
+      return;
+    }
+
+    if (items.length === 0) {
+      return;
+    }
+
+    // Down Arrow: Next item
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      updateSelection(selectedIndex + 1);
+      return;
+    }
+
+    // Up Arrow: Previous item
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      updateSelection(selectedIndex - 1);
+      return;
+    }
+
+    // Enter: Copy selected item to clipboard and hide popup
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (selectedIndex >= 0 && selectedIndex < items.length) {
+        copyItem(items[selectedIndex].id);
+      }
+    }
+  });
 });
