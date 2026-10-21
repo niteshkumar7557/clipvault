@@ -1,5 +1,5 @@
 /**
- * Storage Module
+ * Storage Module - Milestone 5
  * 
  * Manages persistent storage for clipboard history and application settings
  * using `electron-store`.
@@ -29,6 +29,22 @@ const store = new Store({
 });
 
 /**
+ * Sorts items so that pinned items are placed at the top,
+ * and within each group (pinned and unpinned), items are ordered newest first.
+ * 
+ * @param {Array} items
+ * @returns {Array}
+ */
+function sortHistory(items) {
+  if (!Array.isArray(items)) return [];
+  return [...items].sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    return (b.createdAt || 0) - (a.createdAt || 0);
+  });
+}
+
+/**
  * Prunes the history list so that total items do not exceed historyLimit,
  * while ensuring that pinned items are NEVER evicted.
  * 
@@ -55,18 +71,40 @@ function pruneHistory(items, limit) {
 }
 
 /**
- * Returns all history items (newest first).
+ * Returns all history items with pinned items sorted first, then newest first.
  * @returns {Array}
  */
 function getHistory() {
-  return store.get('history', []);
+  const items = store.get('history', []);
+  return sortHistory(items);
+}
+
+/**
+ * Searches history items matching the query substring (case-insensitive).
+ * Pinned items appear first in search results.
+ * 
+ * @param {string} query 
+ * @returns {Array}
+ */
+function searchHistory(query) {
+  const items = store.get('history', []);
+  if (!query || typeof query !== 'string' || query.trim() === '') {
+    return sortHistory(items);
+  }
+
+  const q = query.trim().toLowerCase();
+  const matched = items.filter(item => {
+    return typeof item.content === 'string' && item.content.toLowerCase().includes(q);
+  });
+
+  return sortHistory(matched);
 }
 
 /**
  * Adds a new item to history.
- * - Places the new item at the top (newest first).
+ * - Places the new item at the top.
  * - Deduplicates: If the exact text already exists elsewhere in history,
- *   it preserves its pinned status, removes the old occurrence, and moves it to the top.
+ *   preserves its pinned status and moves it to the top.
  * - Caps by historyLimit without ever evicting pinned items.
  * 
  * @param {string} content - The copied text content
@@ -115,6 +153,51 @@ function addHistoryItem(content, type = 'text') {
 }
 
 /**
+ * Toggles the pinned status of a history item by ID.
+ * 
+ * @param {string} id 
+ * @returns {Object|null} The updated item, or null if not found
+ */
+function togglePin(id) {
+  if (!id || typeof id !== 'string') {
+    throw new Error('Invalid argument: id must be a non-empty string');
+  }
+
+  const history = store.get('history', []);
+  const item = history.find(it => it.id === id);
+  if (!item) {
+    return null;
+  }
+
+  item.pinned = !item.pinned;
+  store.set('history', history);
+  return item;
+}
+
+/**
+ * Deletes a history item by ID.
+ * 
+ * @param {string} id 
+ * @returns {boolean} True if an item was removed, false otherwise
+ */
+function deleteHistoryItem(id) {
+  if (!id || typeof id !== 'string') {
+    throw new Error('Invalid argument: id must be a non-empty string');
+  }
+
+  const history = store.get('history', []);
+  const initialLength = history.length;
+  const filtered = history.filter(it => it.id !== id);
+
+  if (filtered.length !== initialLength) {
+    store.set('history', filtered);
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Returns the current application settings.
  * @returns {Object}
  */
@@ -144,9 +227,13 @@ function clearHistory() {
 module.exports = {
   store,
   getHistory,
+  searchHistory,
   addHistoryItem,
+  togglePin,
+  deleteHistoryItem,
   getSettings,
   setSetting,
   clearHistory,
-  pruneHistory
+  pruneHistory,
+  sortHistory
 };

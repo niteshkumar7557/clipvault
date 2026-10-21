@@ -1,4 +1,4 @@
-/* Popup HUD styling - Milestone 3 */
+/* Popup HUD styling - Milestone 5 */
 
 body {
   width: 100vw;
@@ -26,7 +26,7 @@ body {
 
 /* Header */
 .window-header {
-  height: 42px;
+  height: 38px;
   padding: 0 14px;
   display: flex;
   align-items: center;
@@ -43,7 +43,7 @@ body {
 }
 
 .app-icon {
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .app-title {
@@ -53,9 +53,9 @@ body {
 }
 
 .badge {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
-  padding: 1px 7px;
+  padding: 1px 6px;
   border-radius: 10px;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
@@ -79,10 +79,78 @@ body {
   }
 }
 
+/* Search Bar (Milestone 5) */
+.search-section {
+  padding: 8px 10px 4px 10px;
+  flex-shrink: 0;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 5px 8px;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.search-bar:focus-within {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(0, 113, 227, 0.25);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+@media (prefers-color-scheme: dark) {
+  .search-bar:focus-within {
+    background: rgba(40, 40, 40, 0.9);
+  }
+}
+
+.search-icon {
+  font-size: 11px;
+  opacity: 0.5;
+}
+
+#search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-family);
+  font-size: 12px;
+  color: var(--text-color);
+}
+
+#search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.clear-search-btn {
+  background: rgba(0, 0, 0, 0.08);
+  border: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  font-size: 9px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.clear-search-btn:hover {
+  background: rgba(0, 0, 0, 0.15);
+  color: var(--text-color);
+}
+
 /* Content Area */
 .window-content {
   flex: 1;
-  padding: 8px 10px;
+  padding: 6px 10px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -92,12 +160,12 @@ body {
 .empty-state {
   margin: auto;
   text-align: center;
-  padding: 28px 16px;
+  padding: 24px 16px;
   max-width: 260px;
 }
 
 .empty-icon {
-  font-size: 32px;
+  font-size: 30px;
   margin-bottom: 8px;
   opacity: 0.6;
 }
@@ -116,9 +184,9 @@ body {
 
 kbd {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-  font-size: 11px;
-  padding: 1px 5px;
-  border-radius: 4px;
+  font-size: 10.5px;
+  padding: 1px 4px;
+  border-radius: 3px;
   background: rgba(125, 125, 125, 0.16);
   border: 1px solid var(--border-color);
   color: var(--text-color);
@@ -129,7 +197,7 @@ kbd {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .history-item {
@@ -137,38 +205,51 @@ kbd {
   border: 1px solid var(--card-border);
   border-left: 3px solid transparent;
   border-radius: var(--radius-sm);
-  padding: 8px 10px;
+  padding: 7px 9px;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  transition: all 0.12s ease;
+  transition: all 0.1s ease;
   cursor: pointer;
+  position: relative;
 }
 
 .history-item:hover {
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.8);
   border-color: rgba(0, 113, 227, 0.3);
 }
 
 @media (prefers-color-scheme: dark) {
   .history-item:hover {
-    background: rgba(55, 55, 55, 0.75);
+    background: rgba(55, 55, 55, 0.8);
   }
 }
 
-/* Keyboard Navigation Selected State (Up/Down arrow selection) */
+/* Pinned Item Style */
+.history-item.pinned {
+  border-left-color: #ff9500;
+  background: rgba(255, 149, 0, 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  .history-item.pinned {
+    background: rgba(255, 149, 0, 0.1);
+  }
+}
+
+/* Keyboard Navigation Selected State */
 .history-item.selected {
-  background: rgba(0, 113, 227, 0.12);
-  border-color: rgba(0, 113, 227, 0.4);
-  border-left: 3px solid var(--accent-color);
-  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.15);
+  background: rgba(0, 113, 227, 0.12) !important;
+  border-color: rgba(0, 113, 227, 0.4) !important;
+  border-left: 3px solid var(--accent-color) !important;
+  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.12);
 }
 
 @media (prefers-color-scheme: dark) {
   .history-item.selected {
-    background: rgba(41, 151, 255, 0.2);
-    border-color: rgba(41, 151, 255, 0.5);
-    border-left: 3px solid var(--accent-color);
+    background: rgba(41, 151, 255, 0.22) !important;
+    border-color: rgba(41, 151, 255, 0.5) !important;
+    border-left: 3px solid var(--accent-color) !important;
   }
 }
 
@@ -180,6 +261,16 @@ kbd {
   color: var(--text-muted);
 }
 
+.item-left-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pin-indicator {
+  font-size: 11px;
+}
+
 .item-time {
   font-weight: 500;
 }
@@ -187,7 +278,7 @@ kbd {
 .item-tags {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .type-pill {
@@ -213,22 +304,48 @@ kbd {
   color: var(--text-color);
   word-break: break-word;
   white-space: pre-wrap;
-  max-height: 52px;
+  max-height: 48px;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
 }
 
+/* Quick Action Hover Buttons */
+.item-actions {
+  display: none;
+  align-items: center;
+  gap: 2px;
+}
+
+.history-item:hover .item-actions {
+  display: flex;
+}
+
+.quick-action-btn {
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 1px 3px;
+  border-radius: 3px;
+  opacity: 0.6;
+}
+
+.quick-action-btn:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.08);
+}
+
 /* Footer Navigation Hints */
 .window-footer {
-  height: 32px;
-  padding: 0 12px;
+  height: 28px;
+  padding: 0 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-top: 1px solid var(--border-color);
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--text-muted);
   flex-shrink: 0;
 }
@@ -236,12 +353,11 @@ kbd {
 .nav-hints {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .hint-item {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 11px;
+  gap: 3px;
 }

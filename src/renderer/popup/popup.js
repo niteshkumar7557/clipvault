@@ -1,23 +1,27 @@
 /**
- * Popup Renderer Script - Milestone 3
+ * Popup Renderer Script - Milestone 5
  * 
  * Features:
- * 1. History items retrieval & live update subscription.
- * 2. Keyboard Navigation:
- *    - ArrowDown / ArrowUp to move selection.
- *    - Enter to copy selected item to clipboard and hide popup.
- *    - Esc to dismiss/hide the popup.
- * 3. Mouse click to copy.
- * 4. Window focus/shown reset.
+ * 1. Live search filtering as the user types (`history:search`).
+ * 2. Pinned items displayed first with pin badges (`📌`).
+ * 3. Right-click native context menu via `Menu.popup` (`history:contextMenu`).
+ * 4. Inline quick actions (Pin toggle, Delete).
+ * 5. Full keyboard navigation (Arrow keys, Enter, Esc).
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
   const emptyState = document.getElementById('empty-state');
+  const emptyTitle = document.getElementById('empty-title');
+  const emptyDesc = document.getElementById('empty-desc');
+  const emptyIcon = document.getElementById('empty-icon');
   const historyList = document.getElementById('history-list');
   const itemCountBadge = document.getElementById('item-count-badge');
+  const searchInput = document.getElementById('search-input');
+  const clearSearchBtn = document.getElementById('clear-search-btn');
 
   let items = [];
   let selectedIndex = 0;
+  let currentSearchQuery = '';
 
   /**
    * Safely escapes HTML strings to prevent XSS.
@@ -61,7 +65,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    // Clamp or wrap selection index
     if (newIndex < 0) {
       selectedIndex = items.length - 1;
     } else if (newIndex >= items.length) {
@@ -74,7 +77,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     itemElements.forEach((el, index) => {
       if (index === selectedIndex) {
         el.classList.add('selected');
-        // Ensure the active item stays in visible scroll area
         el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       } else {
         el.classList.remove('selected');
@@ -96,6 +98,32 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /**
+   * Toggles the pin status of an item.
+   * @param {string} id 
+   */
+  async function togglePinItem(id) {
+    if (!id) return;
+    try {
+      await window.api.history.pin(id);
+    } catch (err) {
+      console.error('[Popup] Failed to toggle pin:', err);
+    }
+  }
+
+  /**
+   * Deletes a history item.
+   * @param {string} id 
+   */
+  async function deleteItem(id) {
+    if (!id) return;
+    try {
+      await window.api.history.delete(id);
+    } catch (err) {
+      console.error('[Popup] Failed to delete item:', err);
+    }
+  }
+
+  /**
    * Renders the list of history items into the DOM.
    * @param {Array} newItems 
    */
@@ -108,6 +136,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       historyList.innerHTML = '';
       itemCountBadge.textContent = '0';
       selectedIndex = -1;
+
+      if (currentSearchQuery.trim() !== '') {
+        emptyIcon.textContent = '🔍';
+        emptyTitle.textContent = 'No matching clips';
+        emptyDesc.textContent = `No history items matched "${escapeHtml(currentSearchQuery)}"`;
+      } else {
+        emptyIcon.textContent = '✂️';
+        emptyTitle.textContent = 'No clipboard history';
+        emptyDesc.innerHTML = 'Copy any text with <kbd>⌘C</kbd> to record it here.';
+      }
       return;
     }
 
@@ -119,17 +157,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     const html = items.map((item, index) => {
       const escapedContent = escapeHtml(item.content);
       const timeStr = formatTimestamp(item.createdAt);
-      const isPinned = item.pinned ? '📌' : '';
+      const isPinned = item.pinned;
       const charCount = `${item.content.length}c`;
       const isSelected = index === selectedIndex ? 'selected' : '';
+      const pinnedClass = isPinned ? 'pinned' : '';
 
       return `
-        <li class="history-item ${isSelected}" data-id="${item.id}" data-index="${index}">
+        <li class="history-item ${pinnedClass} ${isSelected}" data-id="${item.id}" data-index="${index}">
           <div class="item-meta">
-            <span class="item-time">${timeStr}</span>
+            <div class="item-left-meta">
+              ${isPinned ? '<span class="pin-indicator" title="Pinned item">📌</span>' : ''}
+              <span class="item-time">${timeStr}</span>
+            </div>
             <div class="item-tags">
-              ${isPinned ? `<span class="type-pill">${isPinned}</span>` : ''}
               <span class="type-pill">${charCount}</span>
+              <div class="item-actions">
+                <button class="quick-action-btn pin-btn" title="${isPinned ? 'Unpin' : 'Pin'}">
+                  ${isPinned ? 'Unpin' : '📌'}
+                </button>
+                <button class="quick-action-btn del-btn" title="Delete">🗑️</button>
+              </div>
             </div>
           </div>
           <div class="item-content">${escapedContent}</div>
@@ -139,15 +186,45 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     historyList.innerHTML = html;
 
-    // Attach click handlers to each card
+    // Attach event listeners to each card
     const itemElements = historyList.querySelectorAll('.history-item');
     itemElements.forEach((el) => {
-      el.addEventListener('click', () => {
-        const id = el.getAttribute('data-id');
-        const idx = parseInt(el.getAttribute('data-index'), 10);
+      const id = el.getAttribute('data-id');
+      const idx = parseInt(el.getAttribute('data-index'), 10);
+
+      // Left Click: Copy
+      el.addEventListener('click', (e) => {
+        // Ignore if clicking action buttons
+        if (e.target.closest('.quick-action-btn')) return;
         updateSelection(idx);
         copyItem(id);
       });
+
+      // Right Click: Native macOS context menu (Milestone 5)
+      el.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        updateSelection(idx);
+        window.api.history.contextMenu(id);
+      });
+
+      // Quick Action: Pin button
+      const pinBtn = el.querySelector('.pin-btn');
+      if (pinBtn) {
+        pinBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          togglePinItem(id);
+        });
+      }
+
+      // Quick Action: Delete button
+      const delBtn = el.querySelector('.del-btn');
+      if (delBtn) {
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteItem(id);
+        });
+      }
     });
 
     // Ensure valid selection
@@ -156,32 +233,84 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // 1. Initial Load: Fetch history from main store
-  try {
-    const initialItems = await window.api.history.get();
-    renderHistory(initialItems);
-  } catch (err) {
-    console.error('[Popup] Failed to load initial history:', err);
+  /**
+   * Refreshes the active history view respecting any active search query.
+   */
+  async function refreshHistoryView() {
+    try {
+      if (currentSearchQuery.trim() !== '') {
+        const results = await window.api.history.search(currentSearchQuery);
+        renderHistory(results);
+      } else {
+        const allItems = await window.api.history.get();
+        renderHistory(allItems);
+      }
+    } catch (err) {
+      console.error('[Popup] Failed to refresh history view:', err);
+    }
   }
 
+  // 1. Initial Load: Fetch history from main store
+  await refreshHistoryView();
+
   // 2. Real-Time Subscription: Listen for live updates emitted by main process
-  window.api.onHistoryUpdated((updatedItems) => {
-    renderHistory(updatedItems);
+  window.api.onHistoryUpdated(() => {
+    refreshHistoryView();
   });
 
-  // 3. Reset selection when window is summoned
+  // 3. Search Input Filtering (Milestone 5)
+  if (searchInput) {
+    searchInput.addEventListener('input', async (e) => {
+      currentSearchQuery = e.target.value;
+      if (currentSearchQuery.length > 0) {
+        clearSearchBtn.style.display = 'flex';
+      } else {
+        clearSearchBtn.style.display = 'none';
+      }
+      selectedIndex = 0;
+      await refreshHistoryView();
+    });
+
+    if (clearSearchBtn) {
+      clearSearchBtn.addEventListener('click', async () => {
+        searchInput.value = '';
+        currentSearchQuery = '';
+        clearSearchBtn.style.display = 'none';
+        searchInput.focus();
+        selectedIndex = 0;
+        await refreshHistoryView();
+      });
+    }
+  }
+
+  // 4. Reset selection and focus search when window is summoned
   if (window.api.onWindowShown) {
     window.api.onWindowShown(() => {
-      updateSelection(0);
+      if (searchInput) {
+        searchInput.value = '';
+        currentSearchQuery = '';
+        clearSearchBtn.style.display = 'none';
+        searchInput.focus();
+      }
+      selectedIndex = 0;
+      refreshHistoryView();
     });
   }
 
-  // 4. Keyboard Navigation: Up, Down, Enter, Esc
+  // 5. Keyboard Navigation: Up, Down, Enter, Esc
   window.addEventListener('keydown', (e) => {
-    // Esc: Hide popup window
+    // Esc: If search has text, clear search first; otherwise close popup
     if (e.key === 'Escape') {
       e.preventDefault();
-      window.api.window.hide();
+      if (currentSearchQuery.length > 0) {
+        searchInput.value = '';
+        currentSearchQuery = '';
+        clearSearchBtn.style.display = 'none';
+        selectedIndex = 0;
+        refreshHistoryView();
+      } else {
+        window.api.window.hide();
+      }
       return;
     }
 

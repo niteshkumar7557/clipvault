@@ -17,18 +17,33 @@
         <h1 class="app-title">ClipVault</h1>
         <span id="item-count-badge" class="badge">0</span>
       </div>
-      <div class="shortcut-pill" title="Global shortcut to summon popup">
+      <div class="shortcut-pill" title="Global shortcut">
         <kbd>⇧⌘V</kbd>
       </div>
     </header>
+
+    <!-- Search Bar per Milestone 5 -->
+    <div class="search-section">
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input 
+          type="text" 
+          id="search-input" 
+          placeholder="Search clips..." 
+          autocomplete="off" 
+          spellcheck="false"
+        >
+        <button id="clear-search-btn" class="clear-search-btn" style="display: none;" title="Clear search">✕</button>
+      </div>
+    </div>
 
     <!-- Content: History Items List -->
     <main class="window-content">
       <!-- Empty State -->
       <div id="empty-state" class="empty-state">
-        <div class="empty-icon">✂️</div>
-        <h3>No clipboard history</h3>
-        <p>Copy any text with <kbd>⌘C</kbd> to record it here.</p>
+        <div class="empty-icon" id="empty-icon">✂️</div>
+        <h3 id="empty-title">No clipboard history</h3>
+        <p id="empty-desc">Copy any text with <kbd>⌘C</kbd> to record it here.</p>
       </div>
 
       <!-- History Items -->
@@ -37,12 +52,13 @@
       </ul>
     </main>
 
-    <!-- Footer: Keyboard Navigation Hints per Milestone 3 -->
+    <!-- Footer: Keyboard Navigation & Context Menu Hints -->
     <footer class="window-footer">
       <div class="nav-hints">
         <span class="hint-item"><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>
         <span class="hint-item"><kbd>↵</kbd> Copy</span>
         <span class="hint-item"><kbd>Esc</kbd> Close</span>
+        <span class="hint-item">Right-click Menu</span>
       </div>
     </footer>
   </div>

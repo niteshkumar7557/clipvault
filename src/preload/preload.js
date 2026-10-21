@@ -1,5 +1,5 @@
 /**
- * Preload Script
+ * Preload Script - Milestone 5
  * 
  * Electron APIs used:
  * - contextBridge: Safely bridges APIs between the isolated preload world and the renderer window.
@@ -12,7 +12,7 @@ contextBridge.exposeInMainWorld('api', {
   // Milestone 1: IPC ping verification
   ping: () => ipcRenderer.invoke('app:ping'),
 
-  // History APIs
+  // History APIs (Milestones 2, 3, 5)
   history: {
     /**
      * Retrieves all history items from the main store.
@@ -21,17 +21,45 @@ contextBridge.exposeInMainWorld('api', {
     get: () => ipcRenderer.invoke('history:get'),
 
     /**
-     * Milestone 3: Writes selected item back to clipboard and hides popup.
+     * Searches history items matching query string.
+     * @param {string} query
+     * @returns {Promise<Array>}
+     */
+    search: (query) => ipcRenderer.invoke('history:search', query),
+
+    /**
+     * Writes selected item back to clipboard and hides popup.
      * @param {string} id
      * @returns {Promise<boolean>}
      */
-    copy: (id) => ipcRenderer.invoke('history:copy', id)
+    copy: (id) => ipcRenderer.invoke('history:copy', id),
+
+    /**
+     * Toggles pin status of an item.
+     * @param {string} id
+     * @returns {Promise<Object|null>}
+     */
+    pin: (id) => ipcRenderer.invoke('history:pin', id),
+
+    /**
+     * Deletes a history item.
+     * @param {string} id
+     * @returns {Promise<boolean>}
+     */
+    delete: (id) => ipcRenderer.invoke('history:delete', id),
+
+    /**
+     * Opens native macOS context menu for an item.
+     * @param {string} id
+     * @returns {Promise<boolean>}
+     */
+    contextMenu: (id) => ipcRenderer.invoke('history:contextMenu', id)
   },
 
   // Window APIs
   window: {
     /**
-     * Milestone 3: Dismisses the popup window (e.g. on Esc key).
+     * Dismisses the popup window (e.g. on Esc key).
      * @returns {Promise<boolean>}
      */
     hide: () => ipcRenderer.invoke('window:hide')
@@ -50,7 +78,7 @@ contextBridge.exposeInMainWorld('api', {
   },
 
   /**
-   * Subscribes to window shown events to reset UI selection.
+   * Subscribes to window shown events to reset UI state.
    * @param {Function} callback
    * @returns {Function} Cleanup function
    */
