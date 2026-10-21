@@ -1,57 +1,71 @@
 /**
- * Main Process Entry Point - Milestone 4
+ * Main Process Entry Point - Milestone 7
  * 
  * Electron APIs used:
- * - app: Controls application lifecycle, single-instance lock, and dock visibility.
- * - BrowserWindow: (via windows.js) Manages application windows.
- * - Tray: (via tray.js) Manages menu bar icon and context menu.
- * - globalShortcut: (via shortcuts.js) Registers OS-level hotkeys.
- * - ipcMain: (via ipc.js) Handles inter-process communication.
- * - clipboard: (via clipboard-watcher.js) Monitors pasteboard changes.
+ * - app: Lifecycle, single-instance lock, dock visibility.
+ * - BrowserWindow: (via windows.js) Application windows.
+ * - Tray: (via tray.js) Menu bar tray icon.
+ * - Menu: (via menu.js) Native macOS application menu bar.
+ * - globalShortcut: (via shortcuts.js) Hotkeys.
+ * - ipcMain / dialog / shell: (via ipc.js) IPC, file dialogs, secure URL launcher.
+ * - clipboard: (via clipboard-watcher.js) Pasteboard monitor.
+ * - Notification: (via notifications.js) System alerts.
  */
 
 const { app } = require('electron');
 const { createPopupWindow, togglePopupWindow, showPopupWindow } = require('./windows');
-const { registerIpcHandlers, broadcastHistoryUpdated, setWatcherInstance } = require('./ipc');
+const {
+  registerIpcHandlers,
+  broadcastHistoryUpdated,
+  setWatcherInstance,
+  exportHistoryDialog,
+  importHistoryDialog,
+  confirmClearHistoryDialog
+} = require('./ipc');
 const { registerShortcuts, unregisterShortcuts } = require('./shortcuts');
 const { ClipboardWatcher } = require('./clipboard-watcher');
 const { addHistoryItem } = require('./store');
 const { createTray, rebuildTrayMenu, setTrayWatcher } = require('./tray');
+const { setupApplicationMenu } = require('./menu');
+const { notifyCopied } = require('./notifications');
 
 let clipboardWatcher = null;
 
-// Electron API: app.requestSingleInstanceLock()
-// Single-instance lock prevents multiple instances of ClipVault from running concurrently.
-// If the lock is acquired, this process is the primary instance.
+// Ensure single instance of ClipVault
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
   console.log('[Main] Another instance is already running. Quitting.');
   app.quit();
 } else {
-  // app.on('second-instance'): Triggered when a user attempts to launch a second instance.
-  // Instead of launching a duplicate, summon and focus the existing popup window.
   app.on('second-instance', () => {
     console.log('[Main] Second instance launched; focusing existing window.');
     showPopupWindow();
   });
 
   app.whenReady().then(() => {
-    // 1. Register IPC channels
+    // 1. Register IPC handlers
     registerIpcHandlers();
 
-    // 2. Hide Dock icon on macOS (app lives exclusively in the menu bar)
+    // 2. Hide Dock icon on macOS (menu bar utility mode)
     if (app.dock) {
       app.dock.hide();
     }
 
-    // 3. Create the popup window
+    // 3. Setup standard native macOS Application Menu (Milestone 7)
+    setupApplicationMenu({
+      onExport: () => exportHistoryDialog(),
+      onImport: () => importHistoryDialog(),
+      onClear: () => confirmClearHistoryDialog()
+    });
+
+    // 4. Create the popup window
     createPopupWindow();
 
-    // 4. Create the native macOS Tray icon and menu
+    // 5. Create the native macOS Tray icon
     createTray();
 
-    // 5. Initialize and start clipboard watcher
+    // 6. Initialize and start clipboard watcher
     clipboardWatcher = new ClipboardWatcher(500);
     setWatcherInstance(clipboardWatcher);
     setTrayWatcher(clipboardWatcher);
@@ -60,15 +74,15 @@ if (!gotTheLock) {
       console.log('[ClipVault] Captured copy:', text.length > 50 ? `${text.slice(0, 47)}...` : text);
       const added = addHistoryItem(text);
       if (added) {
-        // Broadcast live update to popup renderer
         broadcastHistoryUpdated();
-        // Rebuild tray menu with the latest 5 history items
         rebuildTrayMenu();
+        // Milestone 7: Native notification on copy
+        notifyCopied(text);
       }
     });
     clipboardWatcher.start();
 
-    // 6. Register global shortcut (CommandOrControl+Shift+V)
+    // 7. Register global shortcut (CommandOrControl+Shift+V)
     registerShortcuts(() => {
       togglePopupWindow();
     });
@@ -78,7 +92,6 @@ if (!gotTheLock) {
     });
   });
 
-  // app.on('will-quit'): Clean up global hotkeys and polling intervals
   app.on('will-quit', () => {
     unregisterShortcuts();
     if (clipboardWatcher) {
@@ -86,8 +99,7 @@ if (!gotTheLock) {
     }
   });
 
-  // app.on('window-all-closed'): Keep the application running in background when all windows close
   app.on('window-all-closed', () => {
-    // Menu bar accessory apps on macOS do not terminate when windows close
+    // Keep alive in menu bar
   });
 }

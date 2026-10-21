@@ -82,12 +82,38 @@
         </div>
       </section>
 
-      <!-- Section 3: Status / Feedback -->
+      <!-- Section 3: Data Management (Milestone 7) -->
+      <section class="settings-section">
+        <h3>Data Management</h3>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <label>Backup & Restore</label>
+            <span class="setting-desc">Export or import your complete clipboard history as JSON via system dialogs.</span>
+          </div>
+          <div class="setting-control button-group">
+            <button id="export-json-btn" class="secondary-btn">Export JSON...</button>
+            <button id="import-json-btn" class="secondary-btn">Import JSON...</button>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <label>Clear History</label>
+            <span class="setting-desc">Wipe all unpinned clipboard clips with confirmation. Pinned items are kept.</span>
+          </div>
+          <div class="setting-control">
+            <button id="clear-history-btn" class="danger-btn">Clear All Unpinned...</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 4: Status / Feedback -->
       <div id="status-message" class="status-banner" style="display: none;"></div>
     </main>
 
     <footer class="settings-footer">
-      <span>ClipVault for macOS &bull; Milestone 6</span>
+      <span>ClipVault for macOS &bull; Milestone 7</span>
     </footer>
   </div>
 

@@ -1,5 +1,5 @@
 /**
- * Preload Script - Milestone 6
+ * Preload Script - Milestone 7
  * 
  * Electron APIs used:
  * - contextBridge: Safely bridges APIs between preload and renderer worlds.
@@ -12,13 +12,14 @@ contextBridge.exposeInMainWorld('api', {
   // Milestone 1: IPC ping verification
   ping: () => ipcRenderer.invoke('app:ping'),
 
-  // History APIs (Milestones 2, 3, 5)
+  // History APIs (Milestones 2, 3, 5, 7)
   history: {
     get: () => ipcRenderer.invoke('history:get'),
     search: (query) => ipcRenderer.invoke('history:search', query),
     copy: (id) => ipcRenderer.invoke('history:copy', id),
     pin: (id) => ipcRenderer.invoke('history:pin', id),
     delete: (id) => ipcRenderer.invoke('history:delete', id),
+    clear: () => ipcRenderer.invoke('history:clear'),
     contextMenu: (id) => ipcRenderer.invoke('history:contextMenu', id)
   },
 
@@ -36,6 +37,17 @@ contextBridge.exposeInMainWorld('api', {
     get: () => ipcRenderer.invoke('settings:get'),
     set: (key, value) => ipcRenderer.invoke('settings:set', key, value),
     open: () => ipcRenderer.invoke('settings:open')
+  },
+
+  // Data Import / Export (Milestone 7)
+  data: {
+    export: () => ipcRenderer.invoke('data:export'),
+    import: () => ipcRenderer.invoke('data:import')
+  },
+
+  // App & Shell APIs (Milestone 7)
+  app: {
+    openExternal: (url) => ipcRenderer.invoke('app:openExternal', url)
   },
 
   // Window APIs

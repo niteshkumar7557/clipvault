@@ -1,11 +1,13 @@
 /**
- * Settings Renderer Script - Milestone 6
+ * Settings Renderer Script - Milestone 7
  * 
  * Manages live preference updates:
  * - History limit (50, 100, 200, 500, 1000)
  * - Global shortcut re-registration
  * - Launch at login (`app.setLoginItemSettings`)
  * - Notifications toggle
+ * - Data export / import JSON via dialog
+ * - Clear history with confirmation dialog
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -14,6 +16,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const historyLimitSelect = document.getElementById('history-limit-select');
   const launchAtLoginToggle = document.getElementById('launch-at-login-toggle');
   const notificationsToggle = document.getElementById('notifications-toggle');
+  const exportJsonBtn = document.getElementById('export-json-btn');
+  const importJsonBtn = document.getElementById('import-json-btn');
+  const clearHistoryBtn = document.getElementById('clear-history-btn');
   const statusMessage = document.getElementById('status-message');
 
   let bannerTimer = null;
@@ -106,6 +111,48 @@ document.addEventListener('DOMContentLoaded', async () => {
         showStatus(checked ? '✓ Notifications enabled' : '✓ Notifications disabled');
       } catch (err) {
         showStatus('Failed to update notifications: ' + err.message, true);
+      }
+    });
+  }
+
+  // 6. JSON Export via dialog.showSaveDialog (Milestone 7)
+  if (exportJsonBtn) {
+    exportJsonBtn.addEventListener('click', async () => {
+      try {
+        const res = await window.api.data.export();
+        if (res && res.success) {
+          showStatus(`✓ Successfully exported ${res.count} history items to JSON!`);
+        }
+      } catch (err) {
+        showStatus('Export failed: ' + err.message, true);
+      }
+    });
+  }
+
+  // 7. JSON Import via dialog.showOpenDialog (Milestone 7)
+  if (importJsonBtn) {
+    importJsonBtn.addEventListener('click', async () => {
+      try {
+        const res = await window.api.data.import();
+        if (res && res.success) {
+          showStatus(`✓ Successfully imported ${res.count} history items from JSON!`);
+        }
+      } catch (err) {
+        showStatus('Import failed: ' + err.message, true);
+      }
+    });
+  }
+
+  // 8. Clear History with dialog.showMessageBox confirmation (Milestone 7)
+  if (clearHistoryBtn) {
+    clearHistoryBtn.addEventListener('click', async () => {
+      try {
+        const res = await window.api.history.clear();
+        if (res && res.cleared) {
+          showStatus('✓ All unpinned history items cleared.');
+        }
+      } catch (err) {
+        showStatus('Clear failed: ' + err.message, true);
       }
     });
   }
